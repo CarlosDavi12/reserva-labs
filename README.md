@@ -6,7 +6,7 @@ Sistema web completo para gerenciamento de reservas de laboratórios, com autent
 
 - Cadastro e login de usuários com autenticação JWT
 - Papéis de usuário: `SOLICITANTE`, `MODERATOR`, `ADMIN`
-- Cadastro e exclusão de laboratórios com imagem
+- Cadastro e exclusão de laboratórios
 - Associação de moderadores a laboratórios
 - Criação e listagem de reservas por data e laboratório
 - Painel de administração completo (CRUD de laboratórios, associação, visualização de usuários)
