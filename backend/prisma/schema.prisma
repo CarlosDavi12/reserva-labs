@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(uuid())
+  name           String
+  email          String          @unique
+  password       String
+  role           Role            @default(STUDENT)
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  logs           Log[]
+  reservations   Reservation[]
+  moderatorLabs  ModeratorLab[]
+}
+
+model Lab {
+  id             String          @id @default(uuid())
+  name           String
+  description    String?
+  imageUrl       String?         
+  isAvailable    Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  reservations   Reservation[]
+  moderatorLabs  ModeratorLab[]
+}
+
+
+model Reservation {
+  id        String   @id @default(uuid())
+  userId    String
+  labId     String
+  date      DateTime
+  status    Status   @default(PENDING)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lab  Lab  @relation(fields: [labId], references: [id], onDelete: Cascade)
+}
+
+model Log {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  timestamp DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ModeratorLab {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  lab       Lab      @relation(fields: [labId], references: [id], onDelete: Cascade)
+  labId     String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, labId])
+}
+
+enum Role {
+  STUDENT
+  PROFESSOR
+  MODERATOR
+  ADMIN
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
