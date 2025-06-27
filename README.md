@@ -32,7 +32,7 @@ Sistema web completo para gerenciamento de reservas de laboratórios, com autent
 ### Backend (Node.js + Express + Prisma)
 - Express.js
 - Prisma ORM
-- SQLite (desenvolvimento)
+- PostgreSQL (desenvolvimento)
 - JWT para autenticação
 - Multer para upload de imagens
 - CORS, dotenv
