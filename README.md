@@ -56,66 +56,54 @@ Sistema web completo para gerenciamento de reservas de laboratórios, com autent
 
 ### Instalação
 
-1. **Clone o repositório**
+### 1. Clone o repositório
 
 ```bash
-git clone https://github.com/SeuUsuario/reserva-labs.git
+git clone https://github.com/seu-usuario/reserva-labs.git
 cd reserva-labs
 ```
 
-2. **Configure o backend**
+### 2. Configure o backend
+
+#### Instale as dependências:
 
 ```bash
 cd backend
 npm install
-npx prisma migrate dev --name init
 ```
 
-> Isso cria o banco SQLite local e aplica as migrações
+#### Configure o banco de dados PostgreSQL:
 
-3. **(Opcional)** Abra o Prisma Studio:
+Crie um arquivo `.env` com a seguinte variável:
+
+```
+DATABASE_URL="postgresql://usuario:senha@localhost:5432/nome_do_banco"
+JWT_SECRET="sua_chave_secreta"
+```
+
+#### Rode as migrações do Prisma:
 
 ```bash
-npx prisma studio
+npx prisma migrate dev
 ```
 
-4. **Configure o frontend**
+#### Inicie o servidor:
 
 ```bash
-cd ../frontend
-npm install
-```
-
----
-
-### Variáveis de ambiente
-
-Crie um arquivo `.env` na pasta `backend` com o seguinte conteúdo:
-
-```
-JWT_SECRET=sua_chave_secreta
-PORT=3333
-```
-
----
-
-### Executando o projeto
-
-#### Em dois terminais separados:
-
-**Terminal 1 - Backend**
-```bash
-cd backend
 npm run dev
 ```
 
-**Terminal 2 - Frontend**
+### 3. Configure o frontend
+
+Abra outro terminal e vá para a pasta do frontend:
+
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
-Acesse: `http://localhost:5173` no navegador.
+A aplicação será iniciada em `http://localhost:5173`.
 
 ---
 
@@ -152,14 +140,6 @@ reserva-labs/
 
 ---
 
-## Melhorias futuras
-
-- Aprovação de reservas por moderadores
-- Filtro por data e status das reservas
-- Responsividade total em dispositivos móveis
-- Logs mais detalhados e exportáveis
-
----
 
 ## Desenvolvido por
 
