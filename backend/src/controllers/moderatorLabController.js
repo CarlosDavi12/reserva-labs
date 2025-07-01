@@ -80,3 +80,19 @@ export const removeAssociation = async (req, res) => {
         res.status(500).json({ error: 'Erro ao remover associação.' });
     }
 };
+
+// ✅ NOVA FUNÇÃO: Retornar laboratórios associados ao moderador logado
+export const getLabsByModerator = async (req, res) => {
+    try {
+        const associacoes = await prisma.moderatorLab.findMany({
+            where: { userId: req.user.id },
+            include: { lab: true },
+        });
+
+        const laboratorios = associacoes.map((a) => a.lab);
+        res.json(laboratorios);
+    } catch (error) {
+        console.error('Erro ao buscar laboratórios do moderador:', error);
+        res.status(500).json({ error: 'Erro ao buscar laboratórios do moderador.' });
+    }
+};

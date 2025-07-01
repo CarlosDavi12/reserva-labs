@@ -26,7 +26,26 @@ export async function createLab(req, res) {
 
 export async function listLabs(req, res) {
     try {
-        const labs = await prisma.lab.findMany();
+        const labs = await prisma.lab.findMany({
+            include: {
+                moderatorLabs: {
+                    include: {
+                        user: true
+                    }
+                },
+                reservations: {
+                    orderBy: { start: 'asc' },
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
         res.json(labs);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -50,5 +69,138 @@ export async function deleteLab(req, res) {
         res.json({ message: 'Laboratório excluído com sucesso.' });
     } catch (err) {
         res.status(500).json({ error: 'Erro ao excluir laboratório.' });
+    }
+}
+
+// ✅ Nova função: atribuir usuário (coordenador ou monitor) a laboratório
+export async function atribuirUsuarioAoLab(req, res) {
+    const { labId } = req.params;
+    const { userId } = req.body;
+    const solicitante = req.user;
+
+    try {
+        const usuario = await prisma.user.findUnique({ where: { id: userId } });
+        if (!usuario) {
+            return res.status(404).json({ error: 'Usuário não encontrado.' });
+        }
+
+        if (usuario.role !== 'MODERATOR') {
+            return res.status(400).json({ error: 'Apenas usuários moderadores podem ser vinculados.' });
+        }
+
+        if (solicitante.role === 'ADMIN') {
+            // ok
+        } else if (
+            solicitante.role === 'MODERATOR' &&
+            solicitante.moderatorType === 'COORDINATOR'
+        ) {
+            if (usuario.moderatorType !== 'MONITOR') {
+                return res.status(403).json({ error: 'Coordenadores só podem vincular monitores.' });
+            }
+
+            const vinculo = await prisma.moderatorLab.findFirst({
+                where: {
+                    userId: solicitante.id,
+                    labId
+                }
+            });
+
+            if (!vinculo) {
+                return res.status(403).json({ error: 'Você não pode gerenciar este laboratório.' });
+            }
+        } else {
+            return res.status(403).json({ error: 'Permissão negada.' });
+        }
+
+        const jaExiste = await prisma.moderatorLab.findUnique({
+            where: {
+                userId_labId: {
+                    userId,
+                    labId
+                }
+            }
+        });
+
+        if (jaExiste) {
+            return res.status(400).json({ error: 'Usuário já está vinculado a este laboratório.' });
+        }
+
+        const associacao = await prisma.moderatorLab.create({
+            data: {
+                userId,
+                labId
+            }
+        });
+
+        await createLog(solicitante.id, `Vinculou ${usuario.name} ao laboratório`);
+
+        return res.status(201).json({ message: 'Usuário vinculado com sucesso.', associacao });
+    } catch (err) {
+        console.error('Erro ao vincular usuário ao laboratório:', err);
+        return res.status(500).json({ error: 'Erro ao vincular usuário.' });
+    }
+}
+
+// 🔴 Nova função: remover usuário (coordenador ou monitor) de laboratório
+export async function removerUsuarioDoLab(req, res) {
+    const { labId, userId } = req.params;
+    const solicitante = req.user;
+
+    try {
+        const vinculo = await prisma.moderatorLab.findUnique({
+            where: {
+                userId_labId: {
+                    userId,
+                    labId
+                }
+            },
+            include: { user: true }
+        });
+
+        if (!vinculo) {
+            return res.status(404).json({ error: 'Vínculo não encontrado.' });
+        }
+
+        const usuario = vinculo.user;
+
+        if (solicitante.role === 'ADMIN') {
+            // ok
+        } else if (
+            solicitante.role === 'MODERATOR' &&
+            solicitante.moderatorType === 'COORDINATOR'
+        ) {
+            if (usuario.moderatorType !== 'MONITOR') {
+                return res.status(403).json({ error: 'Coordenadores só podem remover monitores.' });
+            }
+
+            const ehDoMesmoLab = await prisma.moderatorLab.findFirst({
+                where: {
+                    userId: solicitante.id,
+                    labId
+                }
+            });
+
+            if (!ehDoMesmoLab) {
+                return res.status(403).json({ error: 'Você não pode remover usuários deste laboratório.' });
+            }
+        } else {
+            return res.status(403).json({ error: 'Permissão negada.' });
+        }
+
+        await prisma.moderatorLab.delete({
+            where: {
+                userId_labId: {
+                    userId,
+                    labId
+                }
+            }
+        });
+
+        await createLog(solicitante.id, `Removeu ${usuario.name} do laboratório`);
+
+        return res.json({ message: 'Usuário removido do laboratório com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao remover usuário do laboratório:', err);
+        return res.status(500).json({ error: 'Erro ao remover vínculo.' });
     }
 }

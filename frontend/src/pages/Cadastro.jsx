@@ -8,26 +8,29 @@ function Cadastro() {
     const [password, setPassword] = useState('');
     const [mensagem, setMensagem] = useState('');
     const [erro, setErro] = useState('');
+    const [isLoading, setIsLoading] = useState(false); // 👈 novo
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMensagem('');
         setErro('');
+        setIsLoading(true);
 
         try {
             await register(name, email, password);
-            setMensagem('Usuário cadastrado com sucesso! Redirecionando...');
+            setMensagem('Cadastro realizado! Verifique seu e-mail para ativar a conta.');
             setName('');
             setEmail('');
             setPassword('');
 
-            // Redireciona após 2 segundos
             setTimeout(() => {
                 navigate('/login');
-            }, 2000);
+            }, 3000);
         } catch (err) {
             setErro(err.message || 'Erro ao cadastrar usuário.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -80,9 +83,11 @@ function Cadastro() {
 
                 <button
                     type="submit"
-                    className="w-full bg-black text-white py-2 rounded hover:opacity-90 transition"
+                    disabled={isLoading}
+                    className={`w-full bg-black text-white py-2 rounded transition ${isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90'
+                        }`}
                 >
-                    Cadastrar
+                    {isLoading ? 'Enviando...' : 'Cadastrar'}
                 </button>
 
                 <a

@@ -6,6 +6,8 @@ import PainelModerador from './pages/PainelModerador';
 import Cadastro from './pages/Cadastro';
 import PainelAdmin from './pages/PainelAdmin';
 import NotFound from './pages/NotFound';
+import DefinirSenha from './pages/DefinirSenha';
+import AtivarConta from './pages/AtivarConta';
 
 function ProtectedRouteModerador({ children }) {
   const token = localStorage.getItem('token');
@@ -42,6 +44,8 @@ function App() {
         {/* Público */}
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/definir-senha" element={<DefinirSenha />} />
+        <Route path="/ativar-conta" element={<AtivarConta />} /> {/* ✅ Correção aplicada */}
 
         {/* Protegidas */}
         <Route path="/" element={<ProtectedRouteUser><Dashboard /></ProtectedRouteUser>} />

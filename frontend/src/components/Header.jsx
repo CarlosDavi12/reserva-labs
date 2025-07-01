@@ -20,6 +20,14 @@ function Header() {
 
     const isActive = (path) => location.pathname === path;
 
+    const traduzirPapel = (role, moderatorType) => {
+        if (role === 'ADMIN') return 'Administrador';
+        if (role === 'MODERATOR') {
+            return moderatorType?.toUpperCase() === 'COORDINATOR' ? 'Coordenador' : 'Monitor';
+        }
+        return 'Solicitante';
+    };
+
     return (
         <header className="bg-white shadow-md px-6 py-4 flex justify-between items-center border-b">
             <div className="text-xl font-semibold text-gray-800">
@@ -42,12 +50,14 @@ function Header() {
                         Minhas Reservas
                     </Link>
 
-                    {(user.role === 'MODERATOR' || user.role === 'ADMIN') && (
+                    {user.role === 'MODERATOR' && (
                         <Link
                             to="/painel"
                             className={`px-3 py-2 rounded-md ${isActive('/painel') ? 'bg-blue-100 text-blue-700' : 'hover:text-gray-900 text-gray-600'}`}
                         >
-                            Painel do Moderador
+                            {user.moderatorType?.toUpperCase() === 'COORDINATOR'
+                                ? 'Painel do Coordenador'
+                                : 'Painel do Monitor'}
                         </Link>
                     )}
 
@@ -65,7 +75,7 @@ function Header() {
                             {user.name}
                         </span>
                         <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full uppercase">
-                            {user.role}
+                            {traduzirPapel(user.role, user.moderatorType)}
                         </span>
                         <button
                             onClick={handleLogout}

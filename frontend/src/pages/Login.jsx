@@ -14,8 +14,22 @@ function Login() {
 
         try {
             const response = await login(email, password);
+
+            // Salva o token
             localStorage.setItem('token', response.token);
-            localStorage.setItem('user', JSON.stringify(response.user));
+
+            // Salva o usuário com o moderatorType incluso, mesmo que null
+            localStorage.setItem(
+                'user',
+                JSON.stringify({
+                    id: response.user.id,
+                    name: response.user.name,
+                    role: response.user.role,
+                    moderatorType: response.user.moderatorType ?? null,
+                })
+            );
+
+            // Redireciona
             window.location.href = '/';
         } catch (err) {
             setErro(err.message || 'Erro ao fazer login');
@@ -26,6 +40,7 @@ function Login() {
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
             <form
                 onSubmit={handleSubmit}
+                autoComplete="on"
                 className="w-full max-w-md bg-white p-8 rounded-lg shadow-md"
             >
                 <h2 className="text-2xl font-bold mb-2 text-center">
@@ -39,6 +54,8 @@ function Login() {
 
                 <input
                     type="email"
+                    name="email"
+                    autoComplete="email"
                     placeholder="E-mail"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -48,6 +65,8 @@ function Login() {
 
                 <input
                     type="password"
+                    name="password"
+                    autoComplete="current-password"
                     placeholder="Senha"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

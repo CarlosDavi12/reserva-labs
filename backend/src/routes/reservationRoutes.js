@@ -3,6 +3,7 @@ import {
     createReservation,
     listReservations,
     updateReservationStatus,
+    getMyReservations,
 } from '../controllers/reservationController.js';
 
 import {
@@ -18,26 +19,8 @@ const router = express.Router();
 // Criar reserva (aluno)
 router.post('/', authenticateToken, createReservation);
 
-// Listar reservas do usuário autenticado (solicitante)
-router.get('/user', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.id;
-
-        const reservations = await prisma.reservation.findMany({
-            where: { userId },
-            include: {
-                lab: true,
-            },
-            orderBy: {
-                date: 'desc',
-            },
-        });
-
-        res.json(reservations);
-    } catch (err) {
-        res.status(500).json({ error: 'Erro ao buscar reservas do usuário' });
-    }
-});
+// ✅ Listar reservas do usuário autenticado (solicitante) — AGORA USANDO O CONTROLLER CORRETO
+router.get('/user', authenticateToken, getMyReservations);
 
 // Listar reservas de laboratórios associados ao moderador
 router.get('/moderator', authenticateToken, authorizeRoles('MODERATOR'), async (req, res) => {
@@ -58,7 +41,7 @@ router.get('/moderator', authenticateToken, authorizeRoles('MODERATOR'), async (
                 lab: true,
             },
             orderBy: {
-                date: 'desc',
+                start: 'desc',
             },
         });
 
@@ -97,7 +80,7 @@ router.get('/', authenticateToken, async (req, res) => {
                     lab: true,
                 },
                 orderBy: {
-                    date: 'desc',
+                    start: 'desc',
                 },
             });
 
@@ -118,7 +101,7 @@ router.get('/', authenticateToken, async (req, res) => {
                 lab: true,
             },
             orderBy: {
-                date: 'desc',
+                start: 'desc',
             },
         });
 

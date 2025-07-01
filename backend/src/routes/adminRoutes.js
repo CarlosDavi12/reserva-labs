@@ -3,28 +3,12 @@ import { authenticateToken, authorizeRoles } from '../middlewares/authMiddleware
 import prisma from '../config/prismaClient.js';
 import { listarUsuarios } from '../controllers/adminController.js';
 
-
 const router = express.Router();
 
-// ✅ NOVA ROTA: Listar todos os usuários (acesso apenas para ADMIN)
-router.get('/users', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
-    try {
-        const users = await prisma.user.findMany({
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                role: true
-            }
-        });
-        res.json(users);
-    } catch (error) {
-        console.error('Erro ao buscar usuários:', error);
-        res.status(500).json({ error: 'Erro ao buscar usuários.' });
-    }
-});
+// ✅ Rota correta: listar todos os usuários (com moderatorType incluso)
+router.get('/users', authenticateToken, authorizeRoles('ADMIN'), listarUsuarios);
 
-// Rota para associar um moderador a um laboratório (acesso apenas para ADMIN)
+// ✅ Associar moderador a laboratório
 router.post('/associar-moderador', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
     const { userId, labId } = req.body;
 
@@ -33,7 +17,6 @@ router.post('/associar-moderador', authenticateToken, authorizeRoles('ADMIN'), a
     }
 
     try {
-        // Evita duplicidade
         const existente = await prisma.moderatorLab.findFirst({
             where: { userId, labId },
         });
@@ -43,10 +26,7 @@ router.post('/associar-moderador', authenticateToken, authorizeRoles('ADMIN'), a
         }
 
         const associacao = await prisma.moderatorLab.create({
-            data: {
-                userId,
-                labId,
-            },
+            data: { userId, labId },
         });
 
         res.status(201).json(associacao);
@@ -56,10 +36,7 @@ router.post('/associar-moderador', authenticateToken, authorizeRoles('ADMIN'), a
     }
 });
 
-// Lista todos os usuários com suas funções (ADMIN, MODERATOR, STUDENT etc)
-router.get('/users', authenticateToken, authorizeRoles('ADMIN'), listarUsuarios);
-
-// Rota para excluir um usuário (acesso apenas para ADMIN)
+// ✅ Excluir usuário (com proteção contra autoexclusão)
 router.delete('/users/:id', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
     const { id } = req.params;
 
@@ -82,8 +59,5 @@ router.delete('/users/:id', authenticateToken, authorizeRoles('ADMIN'), async (r
         res.status(500).json({ error: 'Erro ao excluir usuário.' });
     }
 });
-
-
-
 
 export default router;

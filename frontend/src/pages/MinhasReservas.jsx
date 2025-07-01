@@ -47,7 +47,7 @@ function MinhasReservas() {
                                 </p>
                                 <p className="text-sm text-gray-500 mb-1">
                                     <strong className="text-gray-800">Data:</strong>{' '}
-                                    {new Date(reserva.date).toLocaleString()}
+                                    {new Date(reserva.start).toLocaleString()} — {new Date(reserva.end).toLocaleString()}
                                 </p>
                                 <p className="text-sm text-gray-500">
                                     <strong className="text-gray-800">Status:</strong>{' '}
