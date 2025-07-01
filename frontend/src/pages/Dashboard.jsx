@@ -23,12 +23,12 @@ function AgendaLaboratorio({ reservas }) {
                 initialView="timeGridWeek"
                 locale={ptBrLocale}
                 events={eventos}
-                height={500}
+                height={350}
                 allDaySlot={false}
                 slotDuration="00:30:00"
                 slotLabelInterval="01:00"
-                slotMinTime="07:00:00"
-                slotMaxTime="21:00:00"
+                slotMinTime="00:00:00"   // ← Início do dia
+                slotMaxTime="24:00:00"   // ← Fim do dia
                 headerToolbar={{
                     start: 'title',
                     center: '',

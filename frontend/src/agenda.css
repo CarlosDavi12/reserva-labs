@@ -5,10 +5,12 @@
     border-radius: 12px;
 }
 
+/* Hover no calendário de grade */
 .fc-daygrid-day:hover {
     background-color: #f9fafb;
 }
 
+/* Eventos no calendário */
 .fc-daygrid-event {
     border-radius: 6px !important;
     padding: 2px 6px;
@@ -30,4 +32,45 @@
     /* text-xs */
     border-radius: 0.375rem !important;
     /* rounded-md */
+}
+
+/* 👇 Estilo das datas da barra superior (ex: dom. 29/06) */
+.fc .fc-col-header-cell-cushion {
+    font-size: 0.70rem;
+    /* Fonte menor */
+    font-weight: 500;
+    /* Peso médio */
+    color: #4b5563;
+    /* Tailwind gray-600 */
+    padding: 0.25rem 0;
+    /* Espaçamento vertical */
+    text-transform: lowercase;
+    /* Datas em minúsculas (opcional) */
+}
+
+/* 👇 Cabeçalho da tabela da agenda */
+.fc .fc-col-header-cell {
+    background-color: #f9fafb;
+    /* Fundo leve */
+    border-bottom: 1px solid #e5e7eb;
+    /* Borda discreta */
+}
+
+/* 👇 Aparência da tabela geral da agenda */
+.fc-theme-standard .fc-scrollgrid {
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* 👇 Botões escuros e elegantes */
+.fc .fc-button-primary {
+    background-color: #111827 !important;
+    /* Tailwind gray-900 */
+    border: none !important;
+    color: white !important;
+}
+
+.fc .fc-button-primary:hover {
+    background-color: #1f2937 !important;
+    /* Tailwind gray-800 */
 }

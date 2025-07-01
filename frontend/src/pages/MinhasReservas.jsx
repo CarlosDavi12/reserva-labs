@@ -20,6 +20,21 @@ function MinhasReservas() {
         fetchData();
     }, [token]);
 
+    const formatarDataHora = (start, end) => {
+        const data = new Date(start).toLocaleDateString('pt-BR');
+        const horaInicio = new Date(start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const horaFim = new Date(end).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        return `${data} • ${horaInicio} — ${horaFim}`;
+    };
+
+    const formatarDataCriacao = (createdAt) => {
+        return new Date(createdAt).toLocaleString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    };
+
     return (
         <>
             <Header />
@@ -31,7 +46,9 @@ function MinhasReservas() {
 
                 {reservas.length === 0 ? (
                     <div className="bg-white border border-gray-200 rounded-lg p-10 text-center text-gray-500 shadow-sm">
-                        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gray-200" />
+                        <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-gray-200 flex items-center justify-center text-2xl">
+                            📅
+                        </div>
                         <p>Você ainda não possui reservas</p>
                     </div>
                 ) : (
@@ -39,20 +56,31 @@ function MinhasReservas() {
                         {reservas.map((reserva) => (
                             <li
                                 key={reserva.id}
-                                className="bg-white border border-gray-200 p-5 rounded-lg shadow-sm"
+                                className="bg-white border border-gray-100 p-5 rounded-xl shadow-sm"
                             >
-                                <p className="text-sm text-gray-500 mb-1">
-                                    <strong className="text-gray-800">Laboratório:</strong>{' '}
-                                    {reserva.lab?.name || 'Desconhecido'}
-                                </p>
-                                <p className="text-sm text-gray-500 mb-1">
-                                    <strong className="text-gray-800">Data:</strong>{' '}
-                                    {new Date(reserva.start).toLocaleString()} — {new Date(reserva.end).toLocaleString()}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                    <strong className="text-gray-800">Status:</strong>{' '}
-                                    {reserva.status}
-                                </p>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <div>
+                                        <p className="text-sm text-gray-700">
+                                            <strong>Laboratório:</strong> {reserva.lab?.name || 'Desconhecido'}
+                                        </p>
+                                        <p className="text-sm text-gray-700">
+                                            <strong>Data:</strong> {formatarDataHora(reserva.start, reserva.end)}
+                                        </p>
+                                        <p className="text-sm text-gray-700">
+                                            <strong>Solicitada em:</strong> {formatarDataCriacao(reserva.createdAt)}
+                                        </p>
+                                    </div>
+                                    <span className={`
+                                        text-xs font-medium px-3 py-1 rounded-full 
+                                        ${reserva.status === 'APPROVED'
+                                            ? 'bg-green-100 text-green-700'
+                                            : reserva.status === 'PENDING'
+                                                ? 'bg-yellow-100 text-yellow-700'
+                                                : 'bg-red-100 text-red-700'}
+                                    `}>
+                                        {reserva.status}
+                                    </span>
+                                </div>
                             </li>
                         ))}
                     </ul>

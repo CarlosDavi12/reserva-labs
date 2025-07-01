@@ -59,6 +59,20 @@ function PainelModerador() {
         }
     };
 
+    const formatarDataHora = (start, end) => {
+        const data = new Date(start).toLocaleDateString('pt-BR');
+        const horaInicio = new Date(start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const horaFim = new Date(end).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        return `${data} • ${horaInicio} — ${horaFim}`;
+    };
+
+    const formatarDataCriacao = (createdAt) => {
+        return new Date(createdAt).toLocaleString('pt-BR', {
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        });
+    };
+
     const handleInputChange = (labId, field, value) => {
         setNovoMonitorPorLab((prev) => ({
             ...prev,
@@ -222,7 +236,7 @@ function PainelModerador() {
                                     </div>
                                 )}
 
-                                <div className="mt-6 space-y-4">
+                                <div className="mt-6 space-y-6">
                                     {['PENDING', 'APPROVED', 'REJECTED'].map((status) => (
                                         <div key={status}>
                                             <h3 className="text-sm font-semibold mb-2">
@@ -230,38 +244,64 @@ function PainelModerador() {
                                                 {status === 'APPROVED' && 'Reservas Aprovadas'}
                                                 {status === 'REJECTED' && 'Reservas Rejeitadas'}
                                             </h3>
-                                            <ul className="space-y-2">
-                                                {reservasPorStatus(lab.id, status).map((r) => (
-                                                    <li
-                                                        key={r.id}
-                                                        className="border rounded p-3 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2"
-                                                    >
-                                                        <div>
-                                                            <p><strong>Usuário:</strong> {r.user.name}</p>
-                                                            <p><strong>Início:</strong> {new Date(r.start).toLocaleString()}</p>
-                                                            <p><strong>Fim:</strong> {new Date(r.end).toLocaleString()}</p>
-                                                            <p><strong>Status:</strong> {r.status}</p>
-                                                        </div>
-                                                        {status === 'PENDING' && (
-                                                            <div className="flex gap-2">
-                                                                <button
-                                                                    onClick={() => handleStatusReserva(r.id, 'APPROVED')}
-                                                                    className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
-                                                                >
-                                                                    Aprovar
-                                                                </button>
-                                                                <button
-                                                                    onClick={() => handleStatusReserva(r.id, 'REJECTED')}
-                                                                    className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                                                                >
-                                                                    Rejeitar
-                                                                </button>
+                                            <ul className="space-y-3">
+                                                {reservasPorStatus(lab.id, status)
+                                                    .sort((a, b) => new Date(b.start) - new Date(a.start))
+                                                    .slice(0, status !== 'PENDING' ? 5 : reservas.length)
+                                                    .map((r) => (
+                                                        <li
+                                                            key={r.id}
+                                                            className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm"
+                                                        >
+                                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                                                <div>
+                                                                    <p className="text-gray-700">
+                                                                        <strong>Usuário:</strong> {r.user.name}
+                                                                    </p>
+                                                                    <p className="text-gray-700">
+                                                                        <strong>Data:</strong> {formatarDataHora(r.start, r.end)}
+                                                                    </p>
+                                                                    <p className="text-gray-700">
+                                                                        <strong>Solicitada em:</strong> {formatarDataCriacao(r.createdAt)}
+                                                                    </p>
+                                                                </div>
+
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className={`
+                                                                        text-xs font-medium px-3 py-1 rounded-full
+                                                                        ${r.status === 'APPROVED'
+                                                                            ? 'bg-green-100 text-green-700'
+                                                                            : r.status === 'PENDING'
+                                                                                ? 'bg-yellow-100 text-yellow-700'
+                                                                                : 'bg-red-100 text-red-700'}
+                                                                    `}>
+                                                                        {r.status}
+                                                                    </span>
+
+                                                                    {status === 'PENDING' && (
+                                                                        <div className="flex gap-2">
+                                                                            <button
+                                                                                onClick={() => handleStatusReserva(r.id, 'APPROVED')}
+                                                                                className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-xs"
+                                                                            >
+                                                                                Aprovar
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleStatusReserva(r.id, 'REJECTED')}
+                                                                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-xs"
+                                                                            >
+                                                                                Rejeitar
+                                                                            </button>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                        )}
-                                                    </li>
-                                                ))}
+                                                        </li>
+                                                    ))}
                                                 {reservasPorStatus(lab.id, status).length === 0 && (
-                                                    <li className="text-sm text-gray-500">Nenhuma reserva {status === 'PENDING' ? 'pendente' : status === 'APPROVED' ? 'aprovada' : 'rejeitada'}.</li>
+                                                    <li className="text-sm text-gray-500">
+                                                        Nenhuma reserva {status === 'PENDING' ? 'pendente' : status === 'APPROVED' ? 'aprovada' : 'rejeitada'}.
+                                                    </li>
                                                 )}
                                             </ul>
                                         </div>
@@ -273,7 +313,6 @@ function PainelModerador() {
                 )}
             </div>
 
-            {/* Toast flutuante */}
             {(mensagem || erro) && (
                 <div className="fixed bottom-6 right-6 z-50">
                     <div className={`px-4 py-2 rounded shadow-md text-white transition-all duration-300

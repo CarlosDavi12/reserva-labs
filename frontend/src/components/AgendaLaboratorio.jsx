@@ -46,26 +46,14 @@ function AgendaLaboratorio({ reservas }) {
                 allDaySlot={false}
                 slotDuration="00:30:00"
                 slotLabelInterval="01:00"
-                slotMinTime="07:00:00"
-                slotMaxTime="21:00:00"
+                slotMinTime="00:00:00"   // ← Início do dia
+                slotMaxTime="24:00:00"   // ← Fim do dia
                 headerToolbar={{
                     start: 'title',
                     end: 'today,timeGridWeek,dayGridMonth prev,next'
                 }}
                 eventContent={renderEvento}
             />
-
-            <div className="text-xs mt-3 space-x-4">
-                <span className="inline-flex items-center">
-                    <span className="w-3 h-3 rounded-full bg-green-500 mr-1"></span> Aprovada
-                </span>
-                <span className="inline-flex items-center">
-                    <span className="w-3 h-3 rounded-full bg-yellow-400 mr-1"></span> Pendente
-                </span>
-                <span className="inline-flex items-center">
-                    <span className="w-3 h-3 rounded-full bg-red-500 mr-1"></span> Rejeitada
-                </span>
-            </div>
         </div>
     );
 }
