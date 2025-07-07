@@ -145,7 +145,10 @@ function PainelAdmin() {
 
             await fetch(`${API_URL}/labs`, {
                 method: 'POST',
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('token')}`
+                    // ❌ NÃO adicione 'Content-Type' aqui!
+                },
                 body: formData,
             });
 
