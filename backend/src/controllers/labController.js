@@ -26,6 +26,11 @@ export async function createLab(req, res) {
         res.status(201).json(lab);
     } catch (err) {
         console.error('❌ Erro ao criar laboratório:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+
+        if (err.message && err.message.includes('File too large')) {
+            return res.status(400).json({ error: 'A imagem enviada é muito grande. O tamanho máximo permitido é 5MB.' });
+        }
+
         res.status(400).json({ error: 'Erro ao criar laboratório. Verifique os logs.' });
     }
 }
