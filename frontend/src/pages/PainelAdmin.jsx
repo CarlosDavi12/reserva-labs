@@ -143,20 +143,27 @@ function PainelAdmin() {
             formData.append('description', novoLab.description);
             if (novoLab.image) formData.append('image', novoLab.image);
 
-            await fetch(`${API_URL}/labs`, {
+            const response = await fetch(`${API_URL}/labs`, {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem('token')}`
-                    // ❌ NÃO adicione 'Content-Type' aqui!
+                    // ❌ NÃO adicione 'Content-Type' manualmente ao usar FormData!
                 },
                 body: formData,
             });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Erro ao criar laboratório.');
+            }
 
             setMensagem('Laboratório criado com sucesso!');
             setNovoLab({ name: '', description: '', image: null });
             await carregarUsuariosELabs();
         } catch (err) {
-            setErro(err.message);
+            console.error('Erro ao criar laboratório:', err);
+            setErro(err.message || 'Erro ao criar laboratório.');
         }
     };
 
