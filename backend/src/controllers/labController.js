@@ -9,7 +9,9 @@ export async function createLab(req, res) {
         // 👇 Log do arquivo recebido para debug
         console.log('🧾 req.file:', req.file);
 
-        const imageUrl = req.file?.path || null; // URL pública do Cloudinary
+        // ✅ Captura robusta da URL da imagem
+        const imageUrl = req.file?.path || req.file?.secure_url || null;
+        console.log('🌐 imageUrl extraída:', imageUrl);
 
         const lab = await prisma.lab.create({
             data: {
