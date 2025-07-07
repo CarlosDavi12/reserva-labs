@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { API_URL } from '../services/api';
 
 function validarSenhaForte(senha) {
     const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
@@ -38,7 +39,7 @@ function DefinirSenha() {
         }
 
         try {
-            const response = await fetch('http://localhost:3333/auth/definir-senha', {
+            const response = await fetch(`${API_URL}/auth/definir-senha`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ token, novaSenha }),

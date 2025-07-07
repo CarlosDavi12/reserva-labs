@@ -9,6 +9,7 @@ import {
 } from '../services/api';
 import Header from '../components/Header';
 import Modal from '../components/Modal';
+import { API_URL } from '../services/api';
 
 function formatarTextoDoLog(texto) {
     if (typeof texto !== 'string') return texto;
@@ -55,7 +56,7 @@ function PainelAdmin() {
 
     async function carregarLogsAuditoria() {
         try {
-            const response = await fetch('http://localhost:3333/admin/auditoria', {
+            const response = await fetch(`${API_URL}/admin/auditoria`, {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             if (!response.ok) throw new Error('Erro ao carregar logs de auditoria');
@@ -122,7 +123,7 @@ function PainelAdmin() {
     const handleExcluirUsuario = async (id) => {
         if (!window.confirm('Deseja realmente excluir este usuário?')) return;
         try {
-            const resposta = await fetch(`http://localhost:3333/admin/users/${id}`, {
+            const resposta = await fetch(`${API_URL}/admin/users/${id}`, {
                 method: 'DELETE',
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
             });
@@ -142,7 +143,7 @@ function PainelAdmin() {
             formData.append('description', novoLab.description);
             if (novoLab.image) formData.append('image', novoLab.image);
 
-            await fetch('http://localhost:3333/labs', {
+            await fetch(`${API_URL}/labs`, {
                 method: 'POST',
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
                 body: formData,

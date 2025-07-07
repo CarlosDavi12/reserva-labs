@@ -1,5 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { API_URL } from '../services/api';
+
 
 function Header() {
     const location = useLocation();
@@ -34,7 +36,7 @@ function Header() {
         setAlterando2FA(true);
 
         try {
-            const response = await fetch('http://localhost:3333/auth/atualizar-2fa', {
+            const response = await fetch(`${API_URL}/auth/atualizar-2fa`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

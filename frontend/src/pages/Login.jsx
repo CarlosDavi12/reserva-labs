@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../services/api';
+import { login, API_URL } from '../services/api';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 function Login() {
@@ -44,7 +44,7 @@ function Login() {
 
                 if (novoValor === 3 && !recaptchaLogEnviado.current) {
                     recaptchaLogEnviado.current = true; // ✅ Garante envio único
-                    fetch('http://localhost:3333/logs/recaptcha-visivel', {
+                    fetch(`${API_URL}/logs/recaptcha-visivel`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email }),

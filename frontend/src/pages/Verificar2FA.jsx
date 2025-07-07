@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { API_URL } from '../services/api';
 
 function Verificar2FA() {
     const [codigo, setCodigo] = useState('');
@@ -19,7 +20,7 @@ function Verificar2FA() {
         enviandoRef.current = true;
 
         try {
-            const response = await fetch('http://localhost:3333/auth/enviar-2fa', {
+            const response = await fetch(`${API_URL}/auth/enviar-2fa`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId }),
@@ -85,7 +86,7 @@ function Verificar2FA() {
         setCarregando(true);
 
         try {
-            const response = await fetch('http://localhost:3333/auth/verificar-2fa', {
+            const response = await fetch(`${API_URL}/auth/verificar-2fa`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, code: codigo }),

@@ -1,6 +1,6 @@
 import { fetchWithAuth } from '../utils/fetchWithAuth';
 
-const API_URL = 'http://localhost:3333';
+export const API_URL = import.meta.env.VITE_REACT_APP_API_URL;
 
 export async function login(email, password, recaptchaToken = null) {
     const body = { email, password };

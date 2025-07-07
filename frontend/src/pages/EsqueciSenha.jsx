@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../services/api';
+
 
 const TEMPO_ESPERA = 120; // segundos
 
@@ -42,7 +44,7 @@ function EsqueciSenha() {
         setCarregando(true);
 
         try {
-            const response = await fetch('http://localhost:3333/auth/solicitar-redefinicao', {
+            const response = await fetch(`${API_URL}/auth/solicitar-redefinicao`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
