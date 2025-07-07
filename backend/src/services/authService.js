@@ -11,6 +11,7 @@ import { createLog, traduzirPapel } from './logService.js';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
+const FRONTEND_URL = process.env.FRONTEND_URL;
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -48,7 +49,7 @@ export async function register({ name, email, role, moderatorType }) {
         data: { userId: user.id, token, expiresAt },
     });
 
-    const link = `http://localhost:5173/definir-senha?token=${token}`;
+    const link = `${FRONTEND_URL}/definir-senha?token=${token}`;
 
     await transporter.sendMail({
         from: process.env.EMAIL_FROM,
@@ -112,7 +113,7 @@ export async function registerAndSendEmail({ name, email, role, moderatorType },
         data: { userId: newUser.id, token, expiresAt },
     });
 
-    const link = `http://localhost:5173/definir-senha?token=${token}`;
+    const link = `${FRONTEND_URL}/definir-senha?token=${token}`;
 
     await transporter.sendMail({
         from: process.env.EMAIL_FROM,
@@ -203,7 +204,7 @@ export async function gerarTokenRedefinicaoSenha(email) {
         },
     });
 
-    const link = `http://localhost:5173/definir-senha?token=${token}`;
+    const link = `${FRONTEND_URL}/definir-senha?token=${token}`;
 
     await transporter.sendMail({
         from: process.env.EMAIL_FROM,
@@ -280,7 +281,7 @@ export async function cadastroDireto({ name, email, password }) {
         },
     });
 
-    const link = `http://localhost:5173/ativar-conta?token=${token}`;
+    const link = `${FRONTEND_URL}/ativar-conta?token=${token}`;
 
     await transporter.sendMail({
         from: process.env.EMAIL_FROM,
