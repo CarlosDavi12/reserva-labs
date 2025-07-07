@@ -5,6 +5,10 @@ const prisma = new PrismaClient();
 export async function createLab(req, res) {
     try {
         const { name, description } = req.body;
+
+        // 👇 Log do arquivo recebido para debug
+        console.log('🧾 req.file:', req.file);
+
         const imageUrl = req.file?.path || null; // URL pública do Cloudinary
 
         const lab = await prisma.lab.create({
@@ -19,8 +23,8 @@ export async function createLab(req, res) {
 
         res.status(201).json(lab);
     } catch (err) {
-        console.error('Erro ao criar laboratório:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
-        res.status(400).json({ error: err.response?.data || err.message || 'Erro ao criar laboratório' });
+        console.error('❌ Erro ao criar laboratório:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
+        res.status(400).json({ error: 'Erro ao criar laboratório. Verifique os logs.' });
     }
 }
 
@@ -72,7 +76,6 @@ export async function deleteLab(req, res) {
     }
 }
 
-// ✅ Nova função: atribuir usuário (coordenador ou monitor) a laboratório
 export async function atribuirUsuarioAoLab(req, res) {
     const { labId } = req.params;
     const { userId } = req.body;
@@ -146,7 +149,6 @@ export async function atribuirUsuarioAoLab(req, res) {
     }
 }
 
-// 🔴 Nova função: remover usuário (coordenador ou monitor) de laboratório
 export async function removerUsuarioDoLab(req, res) {
     const { labId, userId } = req.params;
     const solicitante = req.user;
