@@ -20,6 +20,15 @@ function MinhasReservas() {
         fetchData();
     }, [token]);
 
+    useEffect(() => {
+        if (erro) {
+            const timer = setTimeout(() => {
+                setErro('');
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [erro]);
+
     const formatarDataHora = (start, end) => {
         const data = new Date(start).toLocaleDateString('pt-BR');
         const horaInicio = new Date(start).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
@@ -41,8 +50,6 @@ function MinhasReservas() {
             <div className="max-w-5xl mx-auto px-6 py-10">
                 <h1 className="text-3xl font-bold mb-2 text-gray-900">Minhas Reservas</h1>
                 <p className="text-gray-600 mb-6">Acompanhe o status das suas reservas</p>
-
-                {erro && <p className="text-red-600 mb-4">{erro}</p>}
 
                 {reservas.length === 0 ? (
                     <div className="bg-white border border-gray-200 rounded-lg p-10 text-center text-gray-500 shadow-sm">
@@ -86,6 +93,15 @@ function MinhasReservas() {
                     </ul>
                 )}
             </div>
+
+            {/* Toast flutuante de erro */}
+            {erro && (
+                <div className="fixed bottom-6 right-6 z-50">
+                    <div className="px-4 py-2 rounded shadow-md text-white bg-red-600 transition-all duration-300">
+                        {erro}
+                    </div>
+                </div>
+            )}
         </>
     );
 }

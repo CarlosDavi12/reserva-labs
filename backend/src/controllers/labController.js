@@ -1,4 +1,4 @@
-import { createLog } from '../services/logService.js';
+import { createLog, traduzirPapel } from '../services/logService.js';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
@@ -132,7 +132,12 @@ export async function atribuirUsuarioAoLab(req, res) {
             }
         });
 
-        await createLog(solicitante.id, `Vinculou ${usuario.name} ao laboratório`);
+        const lab = await prisma.lab.findUnique({ where: { id: labId } });
+
+        await createLog(
+            solicitante.id,
+            `Vinculou ${usuario.name} (${usuario.email}) com o papel ${traduzirPapel(usuario.role, usuario.moderatorType)} ao laboratório "${lab?.name || labId}"`
+        );
 
         return res.status(201).json({ message: 'Usuário vinculado com sucesso.', associacao });
     } catch (err) {
@@ -196,9 +201,15 @@ export async function removerUsuarioDoLab(req, res) {
             }
         });
 
-        await createLog(solicitante.id, `Removeu ${usuario.name} do laboratório`);
+        const laboratorio = await prisma.lab.findUnique({ where: { id: labId } });
+
+        await createLog(
+            solicitante.id,
+            `Removeu ${usuario.name} (${usuario.email}) com o papel ${traduzirPapel(usuario.role, usuario.moderatorType)} do laboratório "${laboratorio?.name || labId}"`
+        );
 
         return res.json({ message: 'Usuário removido do laboratório com sucesso.' });
+
     } catch (err) {
         console.error('Erro ao remover usuário do laboratório:', err);
         return res.status(500).json({ error: 'Erro ao remover vínculo.' });

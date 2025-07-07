@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
+function validarSenhaForte(senha) {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    return regex.test(senha);
+}
+
 function DefinirSenha() {
     const [searchParams] = useSearchParams();
     const token = searchParams.get('token');
@@ -24,6 +29,11 @@ function DefinirSenha() {
 
         if (novaSenha !== confirmarSenha) {
             setErro('As senhas não coincidem.');
+            return;
+        }
+
+        if (!validarSenhaForte(novaSenha)) {
+            setErro('A senha precisa ter pelo menos 8 caracteres, incluindo letra maiúscula, minúscula, número e um caractere especial.');
             return;
         }
 
@@ -58,7 +68,7 @@ function DefinirSenha() {
                     placeholder="Nova senha"
                     value={novaSenha}
                     onChange={(e) => setNovaSenha(e.target.value)}
-                    className="w-full mb-3 p-3 border rounded"
+                    className="w-full mb-1 p-3 border rounded"
                     required
                 />
 
@@ -67,9 +77,13 @@ function DefinirSenha() {
                     placeholder="Confirmar senha"
                     value={confirmarSenha}
                     onChange={(e) => setConfirmarSenha(e.target.value)}
-                    className="w-full mb-4 p-3 border rounded"
+                    className="w-full mb-3 p-3 border rounded"
                     required
                 />
+
+                <small className="text-xs text-gray-500 block mb-4">
+                    A senha deve conter pelo menos 8 caracteres, com letras maiúsculas, minúsculas, números e um caractere especial.
+                </small>
 
                 <button
                     type="submit"

@@ -1,17 +1,17 @@
 export async function fetchWithAuth(url, options = {}) {
     const token = localStorage.getItem('token');
 
-    // Se não houver token, redireciona imediatamente
+    // 🔒 Redireciona se não houver token
     if (!token) {
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+        limparSessao();
         return null;
     }
 
+    // 🧠 Monta headers com segurança
     const headers = {
-        ...options.headers,
-        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {}),
     };
 
     try {
@@ -20,11 +20,9 @@ export async function fetchWithAuth(url, options = {}) {
             headers,
         });
 
-        // Se o token estiver expirado ou inválido
-        if (response.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
+        // 🚫 Se token expirou ou for inválido
+        if (response.status === 401 || response.status === 403) {
+            limparSessao();
             return null;
         }
 
@@ -33,4 +31,11 @@ export async function fetchWithAuth(url, options = {}) {
         console.error('Erro ao fazer requisição autenticada:', error);
         throw new Error('Erro de conexão com o servidor.');
     }
+}
+
+// 🧼 Função utilitária para limpar sessão e redirecionar
+function limparSessao() {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
 }

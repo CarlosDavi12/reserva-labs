@@ -10,6 +10,7 @@ import {
 } from '../services/api';
 import Header from '../components/Header';
 import AgendaLaboratorio from '../components/AgendaLaboratorio';
+import ModalModerador from '../components/ModalModerador';
 
 function PainelModerador() {
     const [user, setUser] = useState(null);
@@ -20,6 +21,9 @@ function PainelModerador() {
     const [erro, setErro] = useState('');
     const [novoMonitorPorLab, setNovoMonitorPorLab] = useState({});
     const [loadingLabId, setLoadingLabId] = useState(null);
+    const [filtroLab, setFiltroLab] = useState('');
+    const [labSelecionado, setLabSelecionado] = useState(null);
+    const [modalAberto, setModalAberto] = useState(false);
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -47,10 +51,8 @@ function PainelModerador() {
             const labsData = await getMyLabs();
             setLabs(labsData);
 
-            if (user?.moderatorType === 'COORDINATOR') {
-                const usuariosData = await listarUsuariosPermitidosParaCoordenador();
-                setUsuarios(usuariosData);
-            }
+            const usuariosData = await listarUsuariosPermitidosParaCoordenador();
+            setUsuarios(usuariosData);
 
             const reservasData = await getReservationsByModerator();
             setReservas(reservasData);
@@ -114,10 +116,19 @@ function PainelModerador() {
         }
     };
 
-    const handleRemoverVinculo = async (labId, userId) => {
+    const handleRemoverVinculo = async (labId, userId, userType) => {
+        if (user?.moderatorType === 'COORDINATOR' && userType === 'COORDINATOR') {
+            setErro('Coordenadores não podem remover outros coordenadores.');
+            return;
+        }
+        if (user?.moderatorType === 'MONITOR') {
+            setErro('Monitores não têm permissão para remover usuários.');
+            return;
+        }
+
         try {
             await removerUsuarioDoLab(labId, userId);
-            setMensagem('Monitor removido com sucesso!');
+            setMensagem('Usuário removido com sucesso!');
             await carregarDados();
         } catch (err) {
             setErro(err.message);
@@ -137,6 +148,15 @@ function PainelModerador() {
     const reservasPorStatus = (labId, status) =>
         reservas.filter((r) => r.labId === labId && r.status === status);
 
+    const abrirModalLaboratorio = (lab) => {
+        setLabSelecionado(lab);
+        setModalAberto(true);
+    };
+
+    const labsFiltrados = labs.filter(lab =>
+        lab.name.toLowerCase().includes(filtroLab.toLowerCase())
+    );
+
     return (
         <>
             <Header />
@@ -151,167 +171,253 @@ function PainelModerador() {
                         <p className="text-sm">Aguarde um coordenador ou administrador realizar a vinculação.</p>
                     </div>
                 ) : (
-                    <ul className="space-y-6">
-                        {labs.map((lab) => (
-                            <li key={lab.id} className="bg-white border rounded-lg p-6 shadow-sm">
-                                <h2 className="text-xl font-semibold mb-2">{lab.name}</h2>
-                                {lab.description && <p className="text-sm text-gray-600 mb-4">{lab.description}</p>}
+                    <>
+                        <div className="mb-4">
+                            <input
+                                type="text"
+                                placeholder="Filtrar laboratórios por nome..."
+                                value={filtroLab}
+                                onChange={(e) => setFiltroLab(e.target.value)}
+                                className="border px-3 py-2 rounded w-full max-w-md"
+                            />
+                        </div>
 
-                                {user?.moderatorType === 'COORDINATOR' && (
-                                    <div className="mb-6">
-                                        <h3 className="text-sm font-semibold mb-2">Cadastrar novo monitor</h3>
-                                        <div className="grid md:grid-cols-3 gap-2 mb-2">
-                                            <input
-                                                type="text"
-                                                placeholder="Nome"
-                                                value={novoMonitorPorLab[lab.id]?.name || ''}
-                                                onChange={(e) => handleInputChange(lab.id, 'name', e.target.value)}
-                                                className="border px-3 py-2 rounded"
-                                            />
-                                            <input
-                                                type="email"
-                                                placeholder="Email"
-                                                value={novoMonitorPorLab[lab.id]?.email || ''}
-                                                onChange={(e) => handleInputChange(lab.id, 'email', e.target.value)}
-                                                className="border px-3 py-2 rounded"
-                                            />
-                                            <button
-                                                onClick={() => handleCadastroMonitor(lab.id)}
-                                                disabled={loadingLabId === lab.id}
-                                                className={`py-2 rounded text-white transition ${loadingLabId === lab.id
-                                                    ? 'bg-gray-500 cursor-not-allowed'
-                                                    : 'bg-black hover:bg-gray-800'
-                                                    }`}
-                                            >
-                                                {loadingLabId === lab.id ? 'Enviando...' : 'Cadastrar'}
-                                            </button>
+                        <div className="space-y-4">
+                            {labsFiltrados.map((lab) => {
+                                const moderadoresDoLab = usuarios.filter(
+                                    (u) => u.role === 'MODERATOR' && u.moderatorLabs?.some((ml) => ml.labId === lab.id)
+                                );
+                                const monitoresCount = moderadoresDoLab.filter(m => m.moderatorType === 'MONITOR').length;
+                                const coordenadoresCount = moderadoresDoLab.filter(m => m.moderatorType === 'COORDINATOR').length;
+
+                                return (
+                                    <div key={lab.id} className="border rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <h2 className="text-xl font-semibold">{lab.name}</h2>
+                                                {lab.description && (
+                                                    <p className="text-sm text-gray-600 break-words whitespace-pre-wrap mt-1">
+                                                        {lab.description.length > 150
+                                                            ? `${lab.description.substring(0, 150)}...`
+                                                            : lab.description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className="flex flex-shrink-0 items-center gap-2">
+                                                {coordenadoresCount > 0 && (
+                                                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full whitespace-nowrap">
+                                                        {coordenadoresCount} coord.
+                                                    </span>
+                                                )}
+                                                {monitoresCount > 0 && (
+                                                    <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full whitespace-nowrap">
+                                                        {monitoresCount} monit.
+                                                    </span>
+                                                )}
+                                                <button
+                                                    onClick={() => abrirModalLaboratorio(lab)}
+                                                    className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 whitespace-nowrap"
+                                                >
+                                                    Gerenciar
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                )}
-
-                                <AgendaLaboratorio
-                                    reservas={reservas.filter(r => r.labId === lab.id && r.status === 'APPROVED')}
-                                />
-
-                                {user?.moderatorType === 'COORDINATOR' && (
-                                    <div className="mt-4">
-                                        <h3 className="text-sm font-semibold mb-2">Monitores vinculados</h3>
-                                        <ul className="space-y-2">
-                                            {usuarios
-                                                .filter(
-                                                    (u) =>
-                                                        u.role === 'MODERATOR' &&
-                                                        u.moderatorType === 'MONITOR' &&
-                                                        u.moderatorLabs?.some((ml) => ml.labId === lab.id)
-                                                )
-                                                .map((u) => (
-                                                    <li
-                                                        key={u.id}
-                                                        className="flex justify-between items-center border px-3 py-2 rounded text-sm"
-                                                    >
-                                                        <span>
-                                                            {u.name} ({u.email}){' '}
-                                                            {u.password
-                                                                ? <span className="text-green-600 text-xs">(Ativo)</span>
-                                                                : <span className="text-yellow-600 text-xs">(Aguardando ativação)</span>}
-                                                        </span>
-                                                        <button
-                                                            onClick={() => handleRemoverVinculo(lab.id, u.id)}
-                                                            className="text-red-500 hover:text-red-700"
-                                                            title="Remover"
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </li>
-                                                ))}
-                                            {usuarios.filter(
-                                                (u) =>
-                                                    u.role === 'MODERATOR' &&
-                                                    u.moderatorType === 'MONITOR' &&
-                                                    u.moderatorLabs?.some((ml) => ml.labId === lab.id)
-                                            ).length === 0 && (
-                                                    <li className="text-sm text-gray-500">Nenhum monitor vinculado ainda.</li>
-                                                )}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                <div className="mt-6 space-y-6">
-                                    {['PENDING', 'APPROVED', 'REJECTED'].map((status) => (
-                                        <div key={status}>
-                                            <h3 className="text-sm font-semibold mb-2">
-                                                {status === 'PENDING' && 'Reservas Pendentes'}
-                                                {status === 'APPROVED' && 'Reservas Aprovadas'}
-                                                {status === 'REJECTED' && 'Reservas Rejeitadas'}
-                                            </h3>
-                                            <ul className="space-y-3">
-                                                {reservasPorStatus(lab.id, status)
-                                                    .sort((a, b) => new Date(b.start) - new Date(a.start))
-                                                    .slice(0, status !== 'PENDING' ? 5 : reservas.length)
-                                                    .map((r) => (
-                                                        <li
-                                                            key={r.id}
-                                                            className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm"
-                                                        >
-                                                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                                                <div>
-                                                                    <p className="text-gray-700">
-                                                                        <strong>Usuário:</strong> {r.user.name}
-                                                                    </p>
-                                                                    <p className="text-gray-700">
-                                                                        <strong>Data:</strong> {formatarDataHora(r.start, r.end)}
-                                                                    </p>
-                                                                    <p className="text-gray-700">
-                                                                        <strong>Solicitada em:</strong> {formatarDataCriacao(r.createdAt)}
-                                                                    </p>
-                                                                </div>
-
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className={`
-                                                                        text-xs font-medium px-3 py-1 rounded-full
-                                                                        ${r.status === 'APPROVED'
-                                                                            ? 'bg-green-100 text-green-700'
-                                                                            : r.status === 'PENDING'
-                                                                                ? 'bg-yellow-100 text-yellow-700'
-                                                                                : 'bg-red-100 text-red-700'}
-                                                                    `}>
-                                                                        {r.status}
-                                                                    </span>
-
-                                                                    {status === 'PENDING' && (
-                                                                        <div className="flex gap-2">
-                                                                            <button
-                                                                                onClick={() => handleStatusReserva(r.id, 'APPROVED')}
-                                                                                className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 text-xs"
-                                                                            >
-                                                                                Aprovar
-                                                                            </button>
-                                                                            <button
-                                                                                onClick={() => handleStatusReserva(r.id, 'REJECTED')}
-                                                                                className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 text-xs"
-                                                                            >
-                                                                                Rejeitar
-                                                                            </button>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </li>
-                                                    ))}
-                                                {reservasPorStatus(lab.id, status).length === 0 && (
-                                                    <li className="text-sm text-gray-500">
-                                                        Nenhuma reserva {status === 'PENDING' ? 'pendente' : status === 'APPROVED' ? 'aprovada' : 'rejeitada'}.
-                                                    </li>
-                                                )}
-                                            </ul>
-                                        </div>
-                                    ))}
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                                );
+                            })}
+                        </div>
+                    </>
                 )}
             </div>
+
+            {/* Modal de Gerenciamento do Laboratório */}
+            {modalAberto && labSelecionado && (
+                <ModalModerador onClose={() => setModalAberto(false)} titulo={`Gerenciar ${labSelecionado.name}`}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                            {user?.moderatorType === 'COORDINATOR' && (
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <h3 className="text-sm font-semibold mb-3">Cadastrar novo monitor</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <input
+                                            type="text"
+                                            placeholder="Nome completo"
+                                            value={novoMonitorPorLab[labSelecionado.id]?.name || ''}
+                                            onChange={(e) => handleInputChange(labSelecionado.id, 'name', e.target.value)}
+                                            className="border px-3 py-2 rounded w-full"
+                                        />
+                                        <input
+                                            type="email"
+                                            placeholder="Email institucional"
+                                            value={novoMonitorPorLab[labSelecionado.id]?.email || ''}
+                                            onChange={(e) => handleInputChange(labSelecionado.id, 'email', e.target.value)}
+                                            className="border px-3 py-2 rounded w-full"
+                                        />
+                                        <button
+                                            onClick={() => handleCadastroMonitor(labSelecionado.id)}
+                                            disabled={loadingLabId === labSelecionado.id}
+                                            className={`py-2 rounded text-white transition w-full ${loadingLabId === labSelecionado.id
+                                                ? 'bg-gray-500 cursor-not-allowed'
+                                                : 'bg-black hover:bg-gray-800'
+                                                }`}
+                                        >
+                                            {loadingLabId === labSelecionado.id ? 'Enviando...' : 'Cadastrar Monitor'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <AgendaLaboratorio
+                                reservas={reservas.filter(r => r.labId === labSelecionado.id && r.status === 'APPROVED')}
+                            />
+
+                            {/* Seção de Coordenadores Vinculados */}
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <h3 className="text-sm font-semibold mb-3">Coordenadores vinculados</h3>
+                                <ul className="space-y-2">
+                                    {usuarios
+                                        .filter(u => u.role === 'MODERATOR' &&
+                                            u.moderatorType === 'COORDINATOR' &&
+                                            u.moderatorLabs?.some(ml => ml.labId === labSelecionado.id))
+                                        .map((u) => (
+                                            <li key={u.id} className="flex justify-between items-center bg-white border px-4 py-3 rounded-lg">
+                                                <div>
+                                                    <p className="font-medium">{u.name}</p>
+                                                    <p className="text-sm text-gray-600">{u.email}</p>
+                                                    <span className={`text-xs mt-1 ${u.password ? 'text-green-600' : 'text-yellow-600'}`}>
+                                                        {u.password ? '(Ativo)' : '(Aguardando ativação)'}
+                                                    </span>
+                                                </div>
+                                                {/* INÍCIO DA MUDANÇA: REMOÇÃO DO BOTÃO DE LIXEIRA PARA COORDENADORES */}
+                                                {user?.moderatorType === 'COORDINATOR' && user.id === u.id && (
+                                                    <span className="text-sm text-gray-500 italic">Você</span>
+                                                )}
+                                                {/* FIM DA MUDANÇA: O botão de exclusão para outros coordenadores foi removido aqui */}
+                                            </li>
+                                        ))}
+                                    {usuarios.filter(u => u.role === 'MODERATOR' &&
+                                        u.moderatorType === 'COORDINATOR' &&
+                                        u.moderatorLabs?.some(ml => ml.labId === labSelecionado.id)).length === 0 && (
+                                            <li className="text-center py-4 text-gray-500">
+                                                Nenhum coordenador vinculado
+                                            </li>
+                                        )}
+                                </ul>
+                            </div>
+
+                            <div className="bg-gray-50 p-4 rounded-lg">
+                                <h3 className="text-sm font-semibold mb-3">Monitores vinculados</h3>
+                                <ul className="space-y-2">
+                                    {usuarios
+                                        .filter(u => u.role === 'MODERATOR' &&
+                                            u.moderatorType === 'MONITOR' &&
+                                            u.moderatorLabs?.some(ml => ml.labId === labSelecionado.id))
+                                        .map((u) => (
+                                            <li key={u.id} className="flex justify-between items-center bg-white border px-4 py-3 rounded-lg">
+                                                <div>
+                                                    <p className="font-medium">{u.name}</p>
+                                                    <p className="text-sm text-gray-600">{u.email}</p>
+                                                    <span className={`text-xs mt-1 ${u.password ? 'text-green-600' : 'text-yellow-600'
+                                                        }`}>
+                                                        {u.password ? '(Ativo)' : '(Aguardando ativação)'}
+                                                    </span>
+                                                </div>
+                                                {user?.moderatorType === 'COORDINATOR' && (
+                                                    <button
+                                                        onClick={() => handleRemoverVinculo(labSelecionado.id, u.id, 'MONITOR')}
+                                                        className="text-red-600 hover:text-red-800 p-1 rounded-full hover:bg-red-50 transition-colors"
+                                                        title="Remover monitor"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </li>
+                                        ))}
+                                    {usuarios.filter(u => u.role === 'MODERATOR' &&
+                                        u.moderatorType === 'MONITOR' &&
+                                        u.moderatorLabs?.some(ml => ml.labId === labSelecionado.id)).length === 0 && (
+                                            <li className="text-center py-4 text-gray-500">
+                                                Nenhum monitor vinculado
+                                            </li>
+                                        )}
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div className="space-y-6">
+                            {['PENDING', 'APPROVED', 'REJECTED'].map((status) => (
+                                <div key={status} className="bg-gray-50 p-4 rounded-lg">
+                                    <h3 className="text-sm font-semibold mb-3">
+                                        {status === 'PENDING' ? 'Reservas Pendentes' :
+                                            status === 'APPROVED' ? 'Reservas Aprovadas' : 'Reservas Rejeitadas'}
+                                    </h3>
+
+                                    <ul className="space-y-3">
+                                        {reservasPorStatus(labSelecionado.id, status)
+                                            .sort((a, b) => new Date(b.start) - new Date(a.start))
+                                            .slice(0, status !== 'PENDING' ? 5 : reservas.length)
+                                            .map((r) => (
+                                                <li key={r.id} className="bg-white border rounded-lg p-4">
+                                                    <div className="space-y-2">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <p className="font-medium">{r.user.name}</p>
+                                                                <p className="text-sm text-gray-600">{formatarDataHora(r.start, r.end)}</p>
+                                                            </div>
+                                                            <span className={`text-xs font-medium px-2 py-1 rounded-full ${r.status === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                                                r.status === 'PENDING' ? 'bg-yellow-100 text-yellow-700' :
+                                                                    'bg-red-100 text-red-700'
+                                                                }`}>
+                                                                {r.status}
+                                                            </span>
+                                                        </div>
+
+                                                        <p className="text-xs text-gray-500">
+                                                            Solicitada em: {formatarDataCriacao(r.createdAt)}
+                                                        </p>
+
+                                                        {(status === 'APPROVED' || status === 'REJECTED') && r.updatedBy && (
+                                                            <p className="text-xs text-gray-500">
+                                                                {status === 'APPROVED' ? 'Aprovado' : 'Rejeitado'} por: {r.updatedBy.name}
+                                                                ({r.updatedBy.moderatorType === 'COORDINATOR' ? 'Coordenador' : 'Monitor'})
+                                                            </p>
+                                                        )}
+
+                                                        {status === 'PENDING' && (
+                                                            <div className="flex gap-2 pt-2">
+                                                                <button
+                                                                    onClick={() => handleStatusReserva(r.id, 'APPROVED')}
+                                                                    className="flex-1 bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700"
+                                                                >
+                                                                    Aprovar
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleStatusReserva(r.id, 'REJECTED')}
+                                                                    className="flex-1 bg-red-600 text-white px-3 py-1.5 rounded text-sm hover:bg-red-700"
+                                                                >
+                                                                    Rejeitar
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </li>
+                                            ))}
+
+                                        {reservasPorStatus(labSelecionado.id, status).length === 0 && (
+                                            <li className="text-center py-4 text-gray-500">
+                                                Nenhuma reserva {status === 'PENDING' ? 'pendente' :
+                                                    status === 'APPROVED' ? 'aprovada' : 'rejeitada'}
+                                            </li>
+                                        )}
+                                    </ul>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </ModalModerador>
+            )}
 
             {(mensagem || erro) && (
                 <div className="fixed bottom-6 right-6 z-50">

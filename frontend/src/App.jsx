@@ -8,6 +8,8 @@ import PainelAdmin from './pages/PainelAdmin';
 import NotFound from './pages/NotFound';
 import DefinirSenha from './pages/DefinirSenha';
 import AtivarConta from './pages/AtivarConta';
+import EsqueciSenha from './pages/EsqueciSenha';
+import Verificar2FA from './pages/Verificar2FA'; // ✅ nova importação
 
 function ProtectedRouteModerador({ children }) {
   const token = localStorage.getItem('token');
@@ -40,12 +42,13 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
         {/* Público */}
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/definir-senha" element={<DefinirSenha />} />
-        <Route path="/ativar-conta" element={<AtivarConta />} /> {/* ✅ Correção aplicada */}
+        <Route path="/ativar-conta" element={<AtivarConta />} />
+        <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+        <Route path="/verificar-2fa" element={<Verificar2FA />} /> {/* ✅ nova rota */}
 
         {/* Protegidas */}
         <Route path="/" element={<ProtectedRouteUser><Dashboard /></ProtectedRouteUser>} />

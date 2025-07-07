@@ -13,13 +13,17 @@ model User {
   email          String          @unique
   password       String
   role           Role            @default(STUDENT)
-  moderatorType  ModeratorType?  // Novo campo: COORDINATOR ou MONITOR (se for MODERATOR)
+  moderatorType  ModeratorType?
   isActive       Boolean         @default(true)
+  twoFactorEnabled Boolean       @default(false) // ✅ NOVO: indica se 2FA está ativado
   createdAt      DateTime        @default(now())
+
   logs           Log[]
-  reservations   Reservation[]
+  reservations   Reservation[]   @relation("ReservationRequester")
+  updatedReservations Reservation[] @relation("ReservationUpdater")
   moderatorLabs  ModeratorLab[]
   passwordResetTokens PasswordResetToken[]
+  twoFactorCodes TwoFactorCode[]            // ✅ NOVO: relação com os códigos 2FA
 }
 
 model PasswordResetToken {
@@ -30,11 +34,22 @@ model PasswordResetToken {
   expiresAt DateTime
 }
 
+// ✅ NOVO: Códigos 2FA
+model TwoFactorCode {
+  id        String   @id @default(uuid())
+  code      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+
+  @@index([userId])
+}
+
 model Lab {
   id             String          @id @default(uuid())
   name           String
   description    String?
-  imageUrl       String?         
+  imageUrl       String?
   isAvailable    Boolean         @default(true)
   createdAt      DateTime        @default(now())
   reservations   Reservation[]
@@ -42,25 +57,28 @@ model Lab {
 }
 
 model Reservation {
-  id        String   @id @default(uuid())
-  userId    String
-  labId     String
-  start     DateTime
-  end       DateTime
-  status    Status   @default(PENDING)
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  labId        String
+  start        DateTime
+  end          DateTime
+  status       Status   @default(PENDING)
+  createdAt    DateTime @default(now())
+  updatedById  String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lab  Lab  @relation(fields: [labId], references: [id], onDelete: Cascade)
+  user       User @relation("ReservationRequester", fields: [userId], references: [id], onDelete: Cascade)
+  lab        Lab  @relation(fields: [labId], references: [id], onDelete: Cascade)
+  updatedBy  User? @relation("ReservationUpdater", fields: [updatedById], references: [id])
 }
 
 model Log {
   id        String   @id @default(uuid())
-  userId    String
+  userId    String?
   action    String
+  detalhes  String?  // ✅ Adicionado este campo como opcional
   timestamp DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ModeratorLab {

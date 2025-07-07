@@ -6,6 +6,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { createLog, traduzirPapel } from './logService.js';
+
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -18,7 +20,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// ✅ Cadastro de usuário feito por coordenador ou admin
+// ✅ Cadastro de usuário feito por coordenador ou admin (CORRIGIDO)
 export async function register({ name, email, role, moderatorType }) {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new Error('Email já está em uso.');
@@ -34,7 +36,7 @@ export async function register({ name, email, role, moderatorType }) {
     };
 
     if (userRole === 'MODERATOR') {
-        userData.moderatorType = moderatorType === 'COORDENADOR' ? 'COORDINATOR' : 'MONITOR';
+        userData.moderatorType = moderatorType === 'COORDINATOR' ? 'COORDINATOR' : 'MONITOR'; // CORREÇÃO AQUI
     }
 
     const user = await prisma.user.create({ data: userData });
@@ -72,7 +74,7 @@ export async function register({ name, email, role, moderatorType }) {
     };
 }
 
-// ✅ Cadastro via admin/coordenador (com verificação de permissões)
+// ✅ Cadastro via admin/coordenador (CORRIGIDO)
 export async function registerAndSendEmail({ name, email, role, moderatorType }, userCriador) {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new Error('Email já está em uso.');
@@ -98,7 +100,7 @@ export async function registerAndSendEmail({ name, email, role, moderatorType },
     };
 
     if (role === 'MODERATOR') {
-        userData.moderatorType = moderatorType === 'COORDENADOR' ? 'COORDINATOR' : 'MONITOR';
+        userData.moderatorType = moderatorType === 'COORDINATOR' ? 'COORDINATOR' : 'MONITOR'; // CORREÇÃO AQUI
     }
 
     const newUser = await prisma.user.create({ data: userData });
@@ -137,7 +139,6 @@ export async function registerAndSendEmail({ name, email, role, moderatorType },
     };
 }
 
-// ✅ Login
 export async function login({ email, password }) {
     const user = await prisma.user.findUnique({ where: { email } });
 
@@ -148,6 +149,21 @@ export async function login({ email, password }) {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) throw new Error('Credenciais inválidas.');
 
+    // ✅ Se 2FA estiver ativado, retorna apenas os dados do usuário (sem token)
+    if (user.twoFactorEnabled) {
+        return {
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                moderatorType: user.moderatorType ?? null,
+                twoFactorEnabled: true,
+            }
+        };
+    }
+
+    // 🔓 Login normal com token
     const token = jwt.sign(
         {
             id: user.id,
@@ -163,14 +179,16 @@ export async function login({ email, password }) {
         user: {
             id: user.id,
             name: user.name,
+            email: user.email,
             role: user.role,
             moderatorType: user.moderatorType ?? null,
+            twoFactorEnabled: false,
         },
     };
 }
 
-// ✅ Requisição de redefinição de senha
-export async function solicitarRedefinicaoSenha(email) {
+// ✅ Requisição de redefinição de senha (mantido igual)
+export async function gerarTokenRedefinicaoSenha(email) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error('Usuário não encontrado');
 
@@ -199,10 +217,12 @@ export async function solicitarRedefinicaoSenha(email) {
         `,
     });
 
+    await createLog(user.id, `Solicitou redefinição de senha`);
+
     return { message: 'E-mail de redefinição de senha enviado com sucesso.' };
 }
 
-// ✅ Definir nova senha com token
+// ✅ Definir nova senha com token (mantido igual)
 export async function definirSenha({ token, novaSenha }) {
     const resetToken = await prisma.passwordResetToken.findUnique({
         where: { token },
@@ -228,7 +248,7 @@ export async function definirSenha({ token, novaSenha }) {
     return { message: 'Senha definida com sucesso.' };
 }
 
-// ✅ Cadastro comum com senha definida no formulário + ativação por e-mail
+// ✅ Cadastro comum com senha (mantido igual)
 export async function cadastroDireto({ name, email, password }) {
     if (!name || !email || !password) {
         throw new Error('Todos os campos são obrigatórios.');
@@ -275,6 +295,11 @@ export async function cadastroDireto({ name, email, password }) {
         `,
     });
 
+    await createLog(
+        newUser.id,
+        `Realizou auto cadastro como ${newUser.name} (${newUser.email}) com o papel ${traduzirPapel(newUser.role)}`
+    );
+
     return {
         message: 'Usuário criado. Verifique seu e-mail para ativar a conta.',
         user: {
@@ -286,7 +311,7 @@ export async function cadastroDireto({ name, email, password }) {
     };
 }
 
-// ✅ Ativação de conta via link (usuário comum que já definiu senha)
+// ✅ Ativação de conta (mantido igual)
 export async function ativarContaPorToken(token) {
     const tokenEntry = await prisma.passwordResetToken.findUnique({
         where: { token },
@@ -304,4 +329,110 @@ export async function ativarContaPorToken(token) {
     await prisma.passwordResetToken.delete({ where: { token } });
 
     return { message: 'Conta ativada com sucesso.' };
+}
+
+// ✅ 2FA - Geração e envio de código por e-mail
+export async function gerarEEnviarCodigo2FA(userId) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('Usuário não encontrado.');
+
+    if (!user.twoFactorEnabled) {
+        throw new Error('O usuário não possui 2FA ativado.');
+    }
+
+    const codigo = Math.floor(100000 + Math.random() * 900000).toString(); // Gera 6 dígitos
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutos
+
+    // Apaga códigos antigos
+    await prisma.twoFactorCode.deleteMany({ where: { userId } });
+
+    // Salva novo código
+    await prisma.twoFactorCode.create({
+        data: {
+            userId,
+            code: codigo,
+            expiresAt,
+        },
+    });
+
+    // Envia o código por e-mail
+    await transporter.sendMail({
+        from: process.env.EMAIL_FROM,
+        to: user.email,
+        subject: 'Código de Verificação - ReservaLab',
+        html: `
+            <p>Olá, ${user.name}!</p>
+            <p>Seu código de verificação é:</p>
+            <h2>${codigo}</h2>
+            <p>Este código expira em 5 minutos.</p>
+        `,
+    });
+
+    await createLog(user.id, `Código 2FA enviado para ${user.email}`);
+
+    return { message: 'Código 2FA enviado com sucesso.' };
+}
+
+// ✅ 2FA - Verificar código e gerar token
+export async function verificarCodigo2FA(userId, code) {
+    const codigo = await prisma.twoFactorCode.findFirst({
+        where: {
+            userId,
+            code,
+        },
+        include: {
+            user: true,
+        },
+    });
+
+    if (!codigo || codigo.expiresAt < new Date()) {
+        throw new Error('Código inválido ou expirado.');
+    }
+
+    const user = codigo.user;
+
+    // Gera token JWT
+    const token = jwt.sign(
+        {
+            id: user.id,
+            role: user.role,
+            moderatorType: user.moderatorType ?? null,
+        },
+        JWT_SECRET,
+        { expiresIn: '1h' }
+    );
+
+    // Apaga o código após uso
+    await prisma.twoFactorCode.deleteMany({ where: { userId } });
+
+    await createLog(user.id, 'Verificou código 2FA com sucesso');
+
+    return {
+        token,
+        user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            moderatorType: user.moderatorType ?? null,
+        },
+    };
+}
+
+// ✅ 2FA - Ativar ou desativar autenticação de dois fatores
+export async function atualizarTwoFactor(userId, habilitar) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('Usuário não encontrado.');
+
+    const updated = await prisma.user.update({
+        where: { id: userId },
+        data: { twoFactorEnabled: habilitar },
+    });
+
+    await createLog(user.id, `Autenticação de dois fatores ${habilitar ? 'ativada' : 'desativada'}`);
+
+    return {
+        message: `2FA ${habilitar ? 'ativado' : 'desativado'} com sucesso.`,
+        twoFactorEnabled: updated.twoFactorEnabled,
+    };
 }

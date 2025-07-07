@@ -2,19 +2,31 @@ import { fetchWithAuth } from '../utils/fetchWithAuth';
 
 const API_URL = 'http://localhost:3333';
 
-export async function login(email, password) {
+export async function login(email, password, recaptchaToken = null) {
+    const body = { email, password };
+
+    if (recaptchaToken) {
+        body.recaptchaToken = recaptchaToken;
+    }
+
     const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || 'Erro ao fazer login');
     }
 
-    return response.json();
+    // ✅ Garante que twoFactorEnabled esteja presente
+    if (data.user && typeof data.user.twoFactorEnabled === 'undefined') {
+        data.user.twoFactorEnabled = false;
+    }
+
+    return data;
 }
 
 export async function register(name, email, password) {

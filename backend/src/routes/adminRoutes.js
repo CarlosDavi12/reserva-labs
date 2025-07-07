@@ -5,6 +5,17 @@ import { listarUsuarios } from '../controllers/adminController.js';
 
 const router = express.Router();
 
+// ✅ Função auxiliar para traduzir o papel do usuário
+function traduzirPapel(role, moderatorType) {
+    if (role === 'ADMIN') return 'Administrador';
+    if (role === 'MODERATOR') {
+        if (moderatorType === 'COORDINATOR') return 'Coordenador';
+        if (moderatorType === 'MONITOR') return 'Monitor';
+        return 'Moderador';
+    }
+    return 'Solicitante';
+}
+
 // ✅ Rota correta: listar todos os usuários (com moderatorType incluso)
 router.get('/users', authenticateToken, authorizeRoles('ADMIN'), listarUsuarios);
 
@@ -53,10 +64,50 @@ router.delete('/users/:id', authenticateToken, authorizeRoles('ADMIN'), async (r
 
         await prisma.user.delete({ where: { id } });
 
+        const papelTraduzido = traduzirPapel(usuario.role, usuario.moderatorType);
+
+        // Registrar auditoria da exclusão com papel traduzido
+        await prisma.log.create({
+            data: {
+                userId: req.user.id,
+                action: `Excluiu o usuário ${usuario.name} (${usuario.email}) do tipo ${papelTraduzido}`
+            }
+        });
+
         res.json({ message: 'Usuário excluído com sucesso.' });
     } catch (error) {
         console.error('Erro ao excluir usuário:', error);
         res.status(500).json({ error: 'Erro ao excluir usuário.' });
+    }
+});
+
+// ✅ Rota para listar logs de auditoria (com nome e email do usuário ou "Desconhecido")
+router.get('/auditoria', authenticateToken, authorizeRoles('ADMIN'), async (req, res) => {
+    try {
+        const logs = await prisma.log.findMany({
+            orderBy: { timestamp: 'desc' },
+            take: 100,
+            include: {
+                user: {
+                    select: { name: true, email: true, role: true, moderatorType: true },
+                },
+            },
+        });
+
+        const logsFormatados = logs.map(log => ({
+            id: log.id,
+            userName: log.user?.name || 'Desconhecido',
+            userEmail: log.user?.email || 'Desconhecido',
+            userRole: log.user?.role || 'STUDENT',
+            userModeratorType: log.user?.moderatorType || null,
+            action: log.action,
+            timestamp: log.timestamp,
+        }));
+
+        res.json(logsFormatados);
+    } catch (error) {
+        console.error('Erro ao buscar logs de auditoria:', error);
+        res.status(500).json({ error: 'Erro ao buscar logs de auditoria.' });
     }
 });
 

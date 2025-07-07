@@ -2,13 +2,18 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { register } from '../services/api';
 
+function validarSenhaForte(senha) {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    return regex.test(senha);
+}
+
 function Cadastro() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [mensagem, setMensagem] = useState('');
     const [erro, setErro] = useState('');
-    const [isLoading, setIsLoading] = useState(false); // 👈 novo
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
@@ -16,6 +21,12 @@ function Cadastro() {
         setMensagem('');
         setErro('');
         setIsLoading(true);
+
+        if (!validarSenhaForte(password)) {
+            setErro('A senha precisa ter pelo menos 8 caracteres, incluindo letra maiúscula, minúscula, número e um caractere especial.');
+            setIsLoading(false);
+            return;
+        }
 
         try {
             await register(name, email, password);
@@ -77,9 +88,13 @@ function Cadastro() {
                     placeholder="Senha"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full mb-4 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+                    className="w-full mb-1 p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
                     required
                 />
+
+                <small className="text-xs text-gray-500 block mb-4">
+                    A senha deve conter pelo menos 8 caracteres, com letras maiúsculas, minúsculas, números e um caractere especial.
+                </small>
 
                 <button
                     type="submit"

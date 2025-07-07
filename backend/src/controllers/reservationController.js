@@ -30,7 +30,7 @@ export async function createReservation(req, res) {
     }
 
     try {
-        // Checa conflito: qualquer reserva que comece antes do fim e termine depois do início
+        // Checa conflito
         const conflito = await prisma.reservation.findFirst({
             where: {
                 labId,
@@ -58,7 +58,13 @@ export async function createReservation(req, res) {
             },
         });
 
-        await createLog(req.user.id, `Solicitou reserva para o laboratório ${labId} de ${dataInicio.toISOString()} até ${dataFim.toISOString()}`);
+        // Buscar nome do laboratório para o log
+        const lab = await prisma.lab.findUnique({ where: { id: labId } });
+
+        await createLog(
+            req.user.id,
+            `Solicitou reserva para o laboratório "${lab?.name || labId}" de ${dataInicio.toISOString()} até ${dataFim.toISOString()}`
+        );
 
         res.status(201).json(reservation);
     } catch (err) {
@@ -96,7 +102,10 @@ export async function updateReservationStatus(req, res) {
     try {
         const updated = await prisma.reservation.update({
             where: { id },
-            data: { status },
+            data: {
+                status,
+                updatedBy: { connect: { id: req.user.id } }
+            },
         });
 
         await createLog(req.user.id, `Atualizou reserva ${id} para status ${status}`);
@@ -125,7 +134,8 @@ export async function getReservationsByModerator(req, res) {
             },
             include: {
                 user: true,
-                lab: true
+                lab: true,
+                updatedBy: true // ✅ adicionado para exibir quem aprovou/rejeitou
             },
             orderBy: {
                 start: 'desc'
@@ -157,4 +167,3 @@ export async function getMyReservations(req, res) {
         res.status(500).json({ error: 'Erro ao buscar suas reservas.' });
     }
 }
-

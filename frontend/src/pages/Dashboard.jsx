@@ -27,8 +27,8 @@ function AgendaLaboratorio({ reservas }) {
                 allDaySlot={false}
                 slotDuration="00:30:00"
                 slotLabelInterval="01:00"
-                slotMinTime="00:00:00"   // ← Início do dia
-                slotMaxTime="24:00:00"   // ← Fim do dia
+                slotMinTime="00:00:00"
+                slotMaxTime="24:00:00"
                 headerToolbar={{
                     start: 'title',
                     center: '',
@@ -52,6 +52,7 @@ function Dashboard() {
     const [mensagem, setMensagem] = useState('');
     const [datas, setDatas] = useState({});
     const [agendaVisivel, setAgendaVisivel] = useState({});
+    const [descricaoExpandida, setDescricaoExpandida] = useState({});
 
     useEffect(() => {
         async function fetchLabs() {
@@ -79,7 +80,7 @@ function Dashboard() {
     const getTodayDate = () => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        return today.toISOString().split('T')[0]; // yyyy-mm-dd
+        return today.toISOString().split('T')[0];
     };
 
     const handleReservation = async (labId) => {
@@ -113,7 +114,6 @@ function Dashboard() {
             await createReservation(token, labId, start.toISOString(), end.toISOString());
             setMensagem('Reserva solicitada com sucesso!');
 
-            // Limpar campos após reserva
             setDatas((prev) => ({
                 ...prev,
                 [labId]: { date: '', startTime: '', endTime: '' }
@@ -137,11 +137,11 @@ function Dashboard() {
                 <h1 className="text-3xl font-bold mb-4 text-gray-900">Olá, {user?.name}</h1>
                 <p className="text-gray-600 mb-6">Selecione um laboratório para fazer sua reserva</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
                     {labs.map((lab) => (
                         <div
                             key={lab.id}
-                            className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition flex flex-col self-start"
+                            className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition flex flex-col self-start min-h-[540px]"
                         >
                             {lab.imageUrl ? (
                                 <div className="w-full aspect-[16/9] bg-gray-100 rounded mb-4 overflow-hidden">
@@ -157,8 +157,36 @@ function Dashboard() {
                                 </div>
                             )}
 
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">{lab.name}</h3>
-                            <p className="text-sm text-gray-600 mb-3">{lab.description || 'Sem descrição disponível.'}</p>
+                            <h3
+                                className="text-lg font-semibold text-gray-900 mb-1 break-words truncate max-w-full"
+                                title={lab.name}
+                            >
+                                {lab.name}
+                            </h3>
+
+                            <div className="mb-3">
+                                <p
+                                    className={`
+                                        text-sm text-gray-600 break-words max-w-full transition-all duration-300
+                                        ${descricaoExpandida[lab.id] ? '' : 'line-clamp-1'}
+                                    `}
+                                >
+                                    {lab.description || 'Sem descrição disponível.'}
+                                </p>
+                                {lab.description && lab.description.length > 50 && (
+                                    <button
+                                        onClick={() =>
+                                            setDescricaoExpandida((prev) => ({
+                                                ...prev,
+                                                [lab.id]: !prev[lab.id],
+                                            }))
+                                        }
+                                        className="mt-1 text-xs text-gray-500 hover:text-black transition underline"
+                                    >
+                                        {descricaoExpandida[lab.id] ? 'Ver menos' : 'Ver mais'}
+                                    </button>
+                                )}
+                            </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                                 <input
