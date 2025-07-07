@@ -19,8 +19,8 @@ export async function createLab(req, res) {
 
         res.status(201).json(lab);
     } catch (err) {
-        console.error('Erro ao criar laboratório:', err);
-        res.status(400).json({ error: err.message });
+        console.error('Erro ao criar laboratório:', err.response?.data || err.message || err);
+        res.status(400).json({ error: err.response?.data || err.message || 'Erro ao criar laboratório' });
     }
 }
 
