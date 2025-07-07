@@ -92,7 +92,7 @@ Este sistema foi projetado com foco em **segurança**, conforme exigido na disci
 ## Versão para desenvolvimento local
 
 Você pode rodar o sistema localmente com este repositório:  
-[https://github.com/seu-usuario/reserva-labs](https://github.com/seu-usuario/reserva-labs)
+[https://github.com/CarlosDavi12/reserva-lab-local.git](https://github.com/CarlosDavi12/reserva-lab-local.git)
 
 ---
 
