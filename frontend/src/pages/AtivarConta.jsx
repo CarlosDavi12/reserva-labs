@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import { API_URL } from '../services/api';
 
 function useQuery() {
     return new URLSearchParams(useLocation().search);
@@ -10,8 +11,6 @@ function AtivarConta() {
     const token = query.get('token');
     const [mensagem, setMensagem] = useState('');
     const [erro, setErro] = useState('');
-
-    const API_URL = import.meta.env.VITE_REACT_APP_API_URL;
 
     useEffect(() => {
         async function ativar() {
@@ -45,7 +44,7 @@ function AtivarConta() {
         }
 
         ativar();
-    }, [token, mensagem, API_URL]);
+    }, [token, mensagem]);
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
