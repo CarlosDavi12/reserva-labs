@@ -3,15 +3,15 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function createLab(req, res) {
-    const { name, description } = req.body;
-    const image = req.file;
-
     try {
+        const { name, description } = req.body;
+        const imageUrl = req.file?.path || null; // URL pública do Cloudinary
+
         const lab = await prisma.lab.create({
             data: {
                 name,
                 description,
-                imageUrl: image ? `/uploads/${image.filename}` : null,
+                imageUrl,
             },
         });
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getLabs, createReservation, API_URL } from '../services/api';
+import { getLabs, createReservation } from '../services/api';
 import Header from '../components/Header';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -146,7 +146,7 @@ function Dashboard() {
                             {lab.imageUrl ? (
                                 <div className="w-full aspect-[16/9] bg-gray-100 rounded mb-4 overflow-hidden">
                                     <img
-                                        src={`${API_URL}${lab.imageUrl}`}
+                                        src={lab.imageUrl}
                                         alt={`Imagem de ${lab.name}`}
                                         className="w-full h-full object-cover"
                                     />
