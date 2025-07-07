@@ -19,7 +19,7 @@ export async function createLab(req, res) {
 
         res.status(201).json(lab);
     } catch (err) {
-        console.error('Erro ao criar laboratório:', err.response?.data || err.message || err);
+        console.error('Erro ao criar laboratório:', JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
         res.status(400).json({ error: err.response?.data || err.message || 'Erro ao criar laboratório' });
     }
 }
