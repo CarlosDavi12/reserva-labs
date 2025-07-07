@@ -89,6 +89,20 @@ Este sistema foi projetado com foco em **segurança**, conforme exigido na disci
 
 ---
 
+## Versão para desenvolvimento local
+
+Você pode rodar o sistema localmente com este repositório:  
+[https://github.com/seu-usuario/reserva-labs](https://github.com/seu-usuario/reserva-labs)
+
+---
+
+## Acesso de Administrador
+
+E-mail: `carlos@example.com`  
+Senha: `123456`
+
+---
+
 ## Desenvolvido por
 
 Carlos Davi  
