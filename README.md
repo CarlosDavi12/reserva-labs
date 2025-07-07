@@ -15,12 +15,16 @@ Acesse em: [https://reserva-labs.vercel.app](https://reserva-labs.vercel.app)
   - **Monitor**
   - **Coordenador**
   - **Administrador**
-- Cadastro de laboratórios com imagem
+- Cadastro de laboratórios com imagem (armazenadas no Cloudinary)
 - Sistema de reservas com aprovação
 - Painel de administrador (usuários, laboratórios, logs)
 - Painel de coordenador com controle de monitores e reservas
 - Agenda visual por laboratório
 - Auditoria de ações administrativas e tentativas suspeitas
+- Exibição de coordenadores e monitores vinculados por laboratório
+- Cadastro com convite e definição de senha por e-mail (sem senha pré-definida)
+- Reenvio de código 2FA com temporizador
+- Ativação de conta para usuários comuns via link
 
 ---
 
@@ -57,7 +61,7 @@ Este sistema foi projetado com foco em **segurança**, conforme exigido na disci
 
 ### Logs de auditoria
 - Criados com `logService.js`
-- Ações registradas: login suspeito, cadastro, redefinição, exclusão, 2FA, etc.
+- Ações registradas: login suspeito, ativação de conta, cadastro com convite, redefinição, exclusão, exibição do reCAPTCHA, 2FA, entre outras.
 - Visualização no painel do admin (`PainelAdmin.jsx`)
 
 ### Uploads seguros de imagem
